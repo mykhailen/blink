@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { StatusStore, type StatusInputs } from "../status/statusStore.js";
+import { StatusStore, type StatusInputs, type WhatsNew } from "../status/statusStore.js";
 
 function inputs(over: Partial<StatusInputs> = {}): StatusInputs {
   return {
@@ -189,5 +189,65 @@ suite("StatusStore", () => {
     assert.strictEqual(n, 0);
     s.setActiveFile({ filePattern: "*.md", matchedPattern: "*.md" });
     assert.strictEqual(n, 1);
+  });
+});
+
+suite("StatusStore what's new", () => {
+  const notes: WhatsNew = { version: "0.1.5", bullets: ["a"], unseen: true };
+
+  function readyStore(): StatusStore {
+    const store = new StatusStore();
+    store.setConfig(inputs());
+    return store;
+  }
+
+  test("display carries whatsNew (null by default)", () => {
+    assert.strictEqual(readyStore().getDisplay().whatsNew, null);
+    const store = readyStore();
+    store.setWhatsNew(notes);
+    assert.deepStrictEqual(store.getDisplay().whatsNew, notes);
+  });
+
+  test("idle icon shows the update badge while unseen", () => {
+    const store = readyStore();
+    store.setWhatsNew(notes);
+    assert.strictEqual(store.getDisplay().icon, "$(blink-update)");
+  });
+
+  test("idle icon is the plain logo when notes are seen", () => {
+    const store = readyStore();
+    store.setWhatsNew({ ...notes, unseen: false });
+    assert.strictEqual(store.getDisplay().icon, "$(blink-logo)");
+  });
+
+  test("state icons keep precedence over the badge", () => {
+    const store = readyStore();
+    store.setWhatsNew(notes);
+    store.setError("boom");
+    assert.strictEqual(store.getDisplay().icon, "$(blink-issue)");
+    // whatsNew still rides along for the tooltip
+    assert.deepStrictEqual(store.getDisplay().whatsNew, notes);
+  });
+
+  test("markNotesSeen clears the badge and notifies once", () => {
+    const store = readyStore();
+    store.setWhatsNew(notes);
+    let notified = 0;
+    store.subscribe(() => { notified++; });
+    store.markNotesSeen();
+    assert.strictEqual(store.getDisplay().whatsNew?.unseen, false);
+    assert.strictEqual(store.getDisplay().icon, "$(blink-logo)");
+    assert.strictEqual(notified, 1);
+    store.markNotesSeen(); // idempotent — no second notify
+    assert.strictEqual(notified, 1);
+  });
+
+  test("setWhatsNew with an identical value does not notify", () => {
+    const store = readyStore();
+    store.setWhatsNew(notes);
+    let notified = 0;
+    store.subscribe(() => { notified++; });
+    store.setWhatsNew({ ...notes });
+    assert.strictEqual(notified, 0);
   });
 });

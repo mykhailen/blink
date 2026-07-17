@@ -1,15 +1,18 @@
 import type { LlamaCppModelConfig, ModelConfig } from "../config/models.js";
 import { modelTarget } from "../config/models.js";
 import type { RecommendedModel } from "./recommendedModels.js";
+import type { RemotePreset } from "./remotePresets.js";
 
 /**
  * One picker row: an existing model, a downloadable recommendation, the custom
- * escape hatch, the completions on/off toggle, or the settings shortcut.
+ * escape hatch, a remote-endpoint preset, the completions on/off toggle, or
+ * the settings shortcut.
  */
 export type PickEntry =
   | { kind: "configured"; name: string; target: string; active: boolean }
   | { kind: "recommended"; name: string; tags: string[]; rec: RecommendedModel }
   | { kind: "custom" }
+  | { kind: "remote"; preset: RemotePreset }
   | { kind: "cuda" }
   | { kind: "toggle"; enabled: boolean }
   | { kind: "settings" };
@@ -21,6 +24,7 @@ export function buildPickEntries(
   activeName: string,
   enabled: boolean,
   cudaAvailable = false,
+  remotePresets: RemotePreset[] = [],
 ): PickEntry[] {
   const configured = models.map((m) => ({
     kind: "configured" as const,
@@ -36,6 +40,7 @@ export function buildPickEntries(
     ...configured,
     ...recs,
     { kind: "custom" as const },
+    ...remotePresets.map((preset) => ({ kind: "remote" as const, preset })),
     ...(cudaAvailable ? [{ kind: "cuda" as const }] : []),
     { kind: "toggle" as const, enabled },
   ];

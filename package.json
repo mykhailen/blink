@@ -2,7 +2,7 @@
   "name": "blink-for-vscode",
   "displayName": "Blink - Local AI Code Completions",
   "description": "Lightning-fast inline AI completions (ghost text), local-first and BYOK: GGUF models in-process via llama.cpp, or any OpenAI-compatible endpoint.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "lojell",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -70,9 +70,21 @@
         "category": "blink"
       },
       {
+        "command": "blink.toggle",
+        "title": "Toggle Inline Completions",
+        "category": "blink"
+      },
+      {
         "command": "blink.switchModel",
         "title": "Select Model…",
         "category": "blink"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "blink.escapeTap",
+        "key": "escape",
+        "when": "editorTextFocus && !suggestWidgetVisible && !findWidgetVisible && !parameterHintsVisible && !renameInputVisible && !editorHasSelection && !editorHasMultipleSelections && !inSnippetMode && !inlineSuggestionVisible"
       }
     ],
     "configuration": {
@@ -102,7 +114,7 @@
         "blink.models": {
           "type": "array",
           "default": [],
-          "description": "Model registry. Each entry: name, backend (llamacpp|openai), modelId, maxTokens, requestTimeoutMs, fim, plus backend fields — llamacpp: localModelPath (+gpu); openai: apiBaseUrl, apiKey.",
+          "description": "Model registry. Each entry: name, backend (llamacpp|openai), modelId, maxTokens, requestTimeoutMs, fim, plus backend fields — llamacpp: localModelPath (+gpu); openai: apiBaseUrl, apiKey, promptStyle.",
           "items": {
             "type": "object",
             "required": [
@@ -132,7 +144,7 @@
               },
               "requestTimeoutMs": {
                 "type": "number",
-                "default": 3000
+                "description": "Abort a completion request after this many ms. Defaults per backend when omitted: llamacpp 3000, openai 10000."
               },
               "fim": {
                 "type": "string",
@@ -156,7 +168,16 @@
               },
               "apiBaseUrl": {
                 "type": "string",
-                "description": "openai: base URL (e.g. https://host/v1)."
+                "description": "openai: base URL (e.g. https://host/v1). \"/completions\" is appended unless the URL already ends with it, so a full endpoint like https://api.mistral.ai/v1/fim/completions also works."
+              },
+              "promptStyle": {
+                "type": "string",
+                "enum": [
+                  "raw",
+                  "prefix-suffix"
+                ],
+                "default": "raw",
+                "description": "openai: \"raw\" sends one locally FIM-templated prompt; \"prefix-suffix\" sends the untemplated prefix as `prompt` plus a separate `suffix` field, for endpoints that template server-side (e.g. Mistral codestral /v1/fim/completions). With \"prefix-suffix\" the `fim` field is ignored."
               },
               "apiKey": {
                 "type": "string",
@@ -187,6 +208,13 @@
         "default": {
           "fontPath": "./media/blink.woff",
           "fontCharacter": "\\E002"
+        }
+      },
+      "blink-update": {
+        "description": "blink: update available",
+        "default": {
+          "fontPath": "./media/blink.woff",
+          "fontCharacter": "\\E003"
         }
       }
     }

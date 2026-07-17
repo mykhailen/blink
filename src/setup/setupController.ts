@@ -12,6 +12,9 @@ import {
   RECOMMENDED_MODELS, recommendedToModelConfig, type RecommendedModel,
 } from "./recommendedModels.js";
 import {
+  REMOTE_PRESETS, remoteModelConfig, type RemotePreset,
+} from "./remotePresets.js";
+import {
   buildPickEntries, customModelConfig, filenameFromSource, isUrl, type PickEntry,
 } from "./modelPicker.js";
 
@@ -52,7 +55,8 @@ export class SetupController implements ISetupController {
   async showPicker(): Promise<void> {
     const config = this.config.readConfig();
     const entries = buildPickEntries(
-      config.models, RECOMMENDED_MODELS, config.model, config.enabled, await this.cuda.canInstall());
+      config.models, RECOMMENDED_MODELS, config.model, config.enabled,
+      await this.cuda.canInstall(), REMOTE_PRESETS);
     const picked = await this.pick(this.toItems(entries));
     if (!picked) { return; }
     // When the picker was opened from the status bar, closing it restores focus
@@ -65,6 +69,8 @@ export class SetupController implements ISetupController {
       await this.installRecommended(picked.rec);
     } else if (picked.kind === "custom") {
       await this.installCustom();
+    } else if (picked.kind === "remote") {
+      await this.installRemote(picked.preset);
     } else if (picked.kind === "cuda") {
       await this.cuda.install();
     } else if (picked.kind === "settings") {
@@ -88,6 +94,10 @@ export class SetupController implements ISetupController {
         buttons: [removeButton],
       });
     }
+    if (items.length > 0) {
+      items.unshift({ label: "installed", kind: vscode.QuickPickItemKind.Separator });  
+    }
+    items.push({ label: "local models", kind: vscode.QuickPickItemKind.Separator });
     for (const e of entries.filter((e) => e.kind === "recommended")) {
       items.push({
         entry: e,
@@ -100,6 +110,17 @@ export class SetupController implements ISetupController {
       label: "$(edit) Custom model…",
       description: "local .gguf path or download URL",
     });
+    const remotes = entries.filter((e) => e.kind === "remote");
+    if (remotes.length > 0) {
+      items.push({ label: "remote APIs", kind: vscode.QuickPickItemKind.Separator });
+      for (const e of remotes) {
+        items.push({
+          entry: e,
+          label: `$(plug) ${e.preset.label}`,
+          description: e.preset.description,
+        });
+      }
+    }
     const cuda = entries.find((e) => e.kind === "cuda");
     if (cuda) {
       items.push({
@@ -187,6 +208,44 @@ export class SetupController implements ISetupController {
     }
     await this.config.addModel(model);
     await this.config.setActiveModel(model.name);
+  }
+
+  /** Input-box flow for a remote preset: url (unless preset) -> model id -> api key. */
+  private async installRemote(preset: RemotePreset): Promise<void> {
+    let apiBaseUrl = preset.apiBaseUrl ?? "";
+    if (!preset.apiBaseUrl) {
+      const url = await vscode.window.showInputBox({
+        title: `blink: ${preset.label}`,
+        prompt: "Endpoint base URL (e.g. https://host/v1); \"/completions\" is appended unless present",
+        validateInput: (v) => (isUrl(v) ? undefined : "Enter an http(s) URL"),
+      });
+      if (!url) { return; }
+      apiBaseUrl = url.trim();
+    }
+    const modelId = await vscode.window.showInputBox({
+      title: `blink: ${preset.label}`,
+      prompt: "Model id (the API `model` parameter)",
+      value: preset.defaultModelId,
+      validateInput: (v) => (v.trim() ? undefined : "Enter a model id"),
+    });
+    if (!modelId) { return; }
+    const apiKey = await vscode.window.showInputBox({
+      title: `blink: ${preset.label}`,
+      prompt: "API key",
+      password: true,
+      validateInput: (v) => (v.trim() ? undefined : "Enter an API key"),
+    });
+    if (!apiKey) { return; }
+
+    const taken = this.config.readConfig().models.map((m) => m.name);
+    const model = remoteModelConfig(
+      preset,
+      { apiBaseUrl, modelId: modelId.trim(), apiKey: apiKey.trim() },
+      taken,
+    );
+    await this.config.addModel(model);
+    await this.config.setActiveModel(model.name);
+    this.logger.info(`blink: added remote model ${model.name} (${model.apiBaseUrl})`);
   }
 
   /** Returns true on success; logs and cleans up on failure, stays quiet on user cancel. */

@@ -6,7 +6,8 @@ Blink brings lightning-fast inline completions to VS Code, **local-first** and
 **bring-your-own-key**. Run a GGUF code model **in-process** via
 [llama.cpp](https://github.com/ggml-org/llama.cpp) — no server, no account, no
 cloud, no subscription — or point Blink at any OpenAI-compatible
-`/v1/completions` endpoint with your own key.
+`/v1/completions` endpoint with your own key, including **Mistral Codestral**
+via its native FIM API.
 
 ![Blink completing code in VS Code](media/blink.gif)
 
@@ -18,8 +19,9 @@ cloud, no subscription — or point Blink at any OpenAI-compatible
 3. Type. Ghost text appears; press `Tab` to accept.
 
 That's it — no API key, no account, no setup beyond picking a model. To use
-your own endpoint instead, add an entry to `blink.models` (below) and select
-it via **Blink: Select Model…** or the `blink.model` setting.
+a remote endpoint instead, pick one under **remote APIs** in the same picker —
+**Mistral Codestral** (just paste your API key) or any **OpenAI-compatible
+endpoint** — or add an entry to `blink.models` by hand (below).
 
 ## Why Blink?
 
@@ -38,7 +40,8 @@ it via **Blink: Select Model…** or the `blink.model` setting.
   (0.5B–7B) and Blink downloads and runs it inside VS Code. Nothing leaves
   your machine.
 - **BYOK remote option** — any OpenAI-compatible completions endpoint (vLLM,
-  llama-server, TGI, a cloud provider) with your own key.
+  llama-server, TGI, a cloud provider) with your own key, plus a one-minute
+  **Mistral Codestral** preset in the model picker.
 - **Model registry** — configure several models once, switch instantly with
   **Blink: Select Model…** from the palette or the status bar.
 - **GPU out of the box** — Vulkan on Windows/Linux x64, Metal on Apple
@@ -46,6 +49,10 @@ it via **Blink: Select Model…** or the `blink.model` setting.
   **CUDA** download (~580 MB) for peak throughput.
 - **Status bar control** — live state plus hover actions: settings, model
   switch, enable/disable.
+- **Toggle in a blink** — double-press `Escape` in the editor to turn
+  completions on or off (single `Escape` keeps its normal behavior — it only
+  counts when there's nothing to dismiss). Also **Blink: Toggle Inline
+  Completions** in the Command Palette.
 
 ## Requirements
 
@@ -83,9 +90,31 @@ One registry entry per model; the two backends:
     "apiBaseUrl": "https://my-host/v1",
     "apiKey": "sk-…",
     "fim": "<|fim_prefix|>"              // the model family's FIM token
+  },
+  {
+    "name": "mistral-codestral",         // or add it from the picker: remote APIs
+    "backend": "openai",
+    "modelId": "codestral-2508",
+    "apiBaseUrl": "https://api.mistral.ai/v1/fim/completions",
+    "apiKey": "…",                       // console.mistral.ai → API keys
+    "promptStyle": "prefix-suffix"       // Mistral templates FIM server-side
   }
 ]
 ```
+
+Two prompt styles for the `openai` backend:
+
+- **`raw`** (default) — Blink builds one FIM-templated prompt locally (using
+  the `fim` token) and sends it as `prompt`. For self-hosted servers that pass
+  raw prompts to the model: vLLM, llama-server, TGI.
+- **`prefix-suffix`** — Blink sends the code before the cursor as `prompt` and
+  the code after it as `suffix`, and the endpoint applies the model's FIM
+  template itself. This is what **Mistral Codestral**
+  (`https://api.mistral.ai/v1/fim/completions`) expects; `fim` is ignored.
+
+`apiBaseUrl` gets `/completions` appended unless it already ends with it, so
+both `https://host/v1` and a full endpoint URL work. Remote requests time out
+after 10 s by default (`requestTimeoutMs` overrides per entry).
 
 ## Privacy
 

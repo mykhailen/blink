@@ -13,11 +13,12 @@ const mediaDir = join(here, "..", "media");
 const woffPath = join(mediaDir, "blink.woff");
 
 // Codepoints are part of the public contract: package.json's contributes.icons
-// references them as \E000/\E001/\E002.
+// references them as \E000/\E001/\E002/\E003.
 const GLYPHS = [
   { file: "blink.svg", name: "blink-logo", codepoint: 0xe000 },
   { file: "blink-issue.svg", name: "blink-issue", codepoint: 0xe001 },
   { file: "blink-disabled.svg", name: "blink-disabled", codepoint: 0xe002 },
+  { file: "blink-update.svg", name: "blink-update", codepoint: 0xe003 },
 ];
 
 const fontStream = new SVGIcons2SVGFontStream({

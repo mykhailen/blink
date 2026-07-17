@@ -13,6 +13,7 @@ import { BlinkInlineProvider, IInlineCompletionItemProvider } from "./provider/i
 import { StatusStore } from "./status/statusStore.js";
 import { BlinkStatusBar } from "./status/statusBar.js";
 import { ActiveFileMonitor, IActiveFileMonitor } from "./status/activeFileMonitor.js";
+import { ReleaseNotesMonitor, IReleaseNotesMonitor } from "./status/releaseNotesMonitor.js";
 import { Logger, ILogger } from "./common/logger.js";
 import { BlinkExtension, IStatusBar } from "./blinkExtension.js";
 import { FimTemplates } from "./completion/fimTemplates.js";
@@ -40,6 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
     c.register(StatusStore);
     c.register(IStatusBar, BlinkStatusBar);
     c.register(IActiveFileMonitor, ActiveFileMonitor);
+    c.register(IReleaseNotesMonitor, ReleaseNotesMonitor);
     c.register(Metrics);
     c.register(IEditTracker, EditTracker);
     c.register(ILspContextProvider, LspContextProvider);

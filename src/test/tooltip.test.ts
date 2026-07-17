@@ -14,6 +14,7 @@ function display(over: Partial<StatusDisplay> = {}): StatusDisplay {
     enabled: true,
     filePattern: null,
     matchedPattern: null,
+    whatsNew: null,
     ...over,
   };
 }
@@ -89,5 +90,42 @@ suite("renderTooltipMarkdown", () => {
   test("file toggle joins the actions row (still three rows total)", () => {
     const md = renderTooltipMarkdown(display({ filePattern: "*.ts", matchedPattern: null }), "0.1.0");
     assert.strictEqual(md.split("\n\n---\n\n").length, 3);
+  });
+});
+
+const notes = { version: "0.1.5", bullets: ["Double-Escape toggle", "Faster prompts"], unseen: true };
+
+suite("renderTooltipMarkdown what's new", () => {
+  test("renders a What's New row with the version and bullets", () => {
+    const md = renderTooltipMarkdown(display({ whatsNew: notes }), "0.1.5");
+    assert.ok(md.includes("**What's New in 0.1.5**"));
+    assert.ok(md.includes("- Double-Escape toggle"));
+    assert.ok(md.includes("- Faster prompts"));
+  });
+
+  test("section adds a fourth row between model and actions", () => {
+    const md = renderTooltipMarkdown(display({ whatsNew: notes }), "0.1.5");
+    const rows = md.split("\n\n---\n\n");
+    assert.strictEqual(rows.length, 4);
+    assert.ok(rows[2].includes("What's New"));
+    assert.ok(rows[3].includes("command:workbench.action.openSettings")); // actions stay last
+  });
+
+  test("always links the full changelog", () => {
+    const md = renderTooltipMarkdown(display({ whatsNew: notes }), "0.1.5");
+    assert.ok(md.includes("[$(book) Full changelog](command:blink.openChangelog)"));
+  });
+
+  test("offers Mark as read only while unseen", () => {
+    const unseen = renderTooltipMarkdown(display({ whatsNew: notes }), "0.1.5");
+    assert.ok(unseen.includes("[$(check) Mark as read](command:blink.markNotesSeen)"));
+    const seen = renderTooltipMarkdown(display({ whatsNew: { ...notes, unseen: false } }), "0.1.5");
+    assert.ok(!seen.includes("command:blink.markNotesSeen"));
+  });
+
+  test("omits the section entirely when whatsNew is null (three rows)", () => {
+    const md = renderTooltipMarkdown(display({ whatsNew: null }), "0.1.5");
+    assert.strictEqual(md.split("\n\n---\n\n").length, 3);
+    assert.ok(!md.includes("What's New"));
   });
 });

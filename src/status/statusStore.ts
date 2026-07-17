@@ -14,6 +14,13 @@ export interface ActiveFileStatus {
   matchedPattern: string | null; // blacklist entry blocking it, or null
 }
 
+/** Newest release's notes for the tooltip + unread-badge flag. */
+export interface WhatsNew {
+  version: string;
+  bullets: string[];
+  unseen: boolean;
+}
+
 export interface StatusDisplay {
   state: DisplayState;
   icon: string;
@@ -25,6 +32,7 @@ export interface StatusDisplay {
   enabled: boolean;
   filePattern: string | null;
   matchedPattern: string | null;
+  whatsNew: WhatsNew | null;
 }
 
 /**
@@ -42,6 +50,7 @@ export class StatusStore {
   private error: string | null = null;
   private filePattern: string | null = null;
   private matchedPattern: string | null = null;
+  private whatsNew: WhatsNew | null = null;
   private readonly listeners = new Set<() => void>();
 
   subscribe(listener: () => void): () => void {
@@ -94,6 +103,20 @@ export class StatusStore {
     this.notify();
   }
 
+  /** Publish (or clear) the newest release's notes for tooltip + badge. */
+  setWhatsNew(notes: WhatsNew | null): void {
+    if (JSON.stringify(this.whatsNew) === JSON.stringify(notes)) { return; }
+    this.whatsNew = notes;
+    this.notify();
+  }
+
+  /** Clear the unread badge (tooltip section keeps rendering). */
+  markNotesSeen(): void {
+    if (!this.whatsNew?.unseen) { return; }
+    this.whatsNew = { ...this.whatsNew, unseen: false };
+    this.notify();
+  }
+
   getDisplay(): StatusDisplay {
     const base = {
       label: "",
@@ -103,6 +126,7 @@ export class StatusStore {
       enabled: this.enabled,
       filePattern: this.filePattern,
       matchedPattern: this.matchedPattern,
+      whatsNew: this.whatsNew,
     };
     if (!this.enabled) {
       return { ...base, state: "disabled", icon: "$(blink-disabled)", detail: "Disabled" };
@@ -127,6 +151,7 @@ export class StatusStore {
     if (this.working) {
       return { ...base, state: "working", icon: "$(loading~spin)", detail: "Working…" };
     }
-    return { ...base, state: "idle", icon: "$(blink-logo)", detail: "Ready" };
+    const idleIcon = this.whatsNew?.unseen ? "$(blink-update)" : "$(blink-logo)";
+    return { ...base, state: "idle", icon: idleIcon, detail: "Ready" };
   }
 }

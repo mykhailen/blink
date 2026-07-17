@@ -11,6 +11,7 @@ import { token, Inject } from "./di/container.js";
 import { IEditTracker } from "./edits/editTracker.js";
 import { ICommands } from "./commands.js";
 import { IActiveFileMonitor } from "./status/activeFileMonitor.js";
+import { IReleaseNotesMonitor } from "./status/releaseNotesMonitor.js";
 
 export interface IStatusBar {
   create(): void;
@@ -38,6 +39,7 @@ export class BlinkExtension {
     @IEditTracker private readonly edits: IEditTracker,
     @ICommands private readonly commands: ICommands,
     @IActiveFileMonitor private readonly activeFile: IActiveFileMonitor,
+    @IReleaseNotesMonitor private readonly releaseNotes: IReleaseNotesMonitor,
   ) {}
 
   start(): void {
@@ -49,6 +51,7 @@ export class BlinkExtension {
     this.edits.register();
     this.commands.register();
     this.activeFile.register();
+    this.releaseNotes.register();
     this.clients.onLoadError(() => this.status.setError("model load failed"));
     this.cuda.onInstalled(() => {
       // Drop the Vulkan-loaded engine so the next completion loads via CUDA.

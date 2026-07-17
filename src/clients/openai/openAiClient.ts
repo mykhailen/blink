@@ -1,5 +1,6 @@
-import type { ManagedClient } from "../types.js";
-import type { ModelConfig, OpenAiModelConfig } from "../../config/models.js";
+import type { FimParts, ManagedClient } from "../types.js";
+import { requestTimeoutFor, type ModelConfig, type OpenAiModelConfig } from "../../config/models.js";
+import type { ILogger } from "../../common/logging.js";
 
 interface OpenAiOpts {
   baseUrl: string;
@@ -7,6 +8,7 @@ interface OpenAiOpts {
   model: string;
   maxTokens: number;
   timeoutMs: number;
+  promptStyle: "raw" | "prefix-suffix";
 }
 
 /**
@@ -19,7 +21,10 @@ export class OpenAICompletionClient implements ManagedClient {
   private opts: OpenAiOpts | undefined;
   private model: OpenAiModelConfig | undefined;
 
-  constructor(private readonly fetchFn: typeof fetch = fetch) { }
+  constructor(
+    private readonly fetchFn: typeof fetch = fetch,
+    private readonly logger?: ILogger,
+  ) { }
 
   setConfig(model: ModelConfig): void {
     const m = model as OpenAiModelConfig;
@@ -29,7 +34,8 @@ export class OpenAICompletionClient implements ManagedClient {
       apiKey: m.apiKey,
       model: m.modelId,
       maxTokens: m.maxTokens,
-      timeoutMs: m.requestTimeoutMs,
+      timeoutMs: requestTimeoutFor(m),
+      promptStyle: m.promptStyle ?? "raw",
     };
   }
 
@@ -50,12 +56,16 @@ export class OpenAICompletionClient implements ManagedClient {
     return this.model?.fim ?? null;
   }
 
-  async complete(prompt: string, stop: string[], signal: AbortSignal): Promise<string> {
+  async complete(prompt: string, stop: string[], signal: AbortSignal, parts?: FimParts): Promise<string> {
     const opts = this.opts;
     if (!opts) { return ""; }
 
     const base = opts.baseUrl.replace(/\/+$/, "");
-    const url = `${base}/completions`;
+    const url = base.endsWith("/completions") ? base : `${base}/completions`;
+
+    const fim = opts.promptStyle === "prefix-suffix" && parts
+      ? { prompt: parts.prefix, suffix: parts.suffix }
+      : { prompt };
 
     const internalController = new AbortController();
     const timer = setTimeout(() => internalController.abort(), opts.timeoutMs);
@@ -77,7 +87,7 @@ export class OpenAICompletionClient implements ManagedClient {
         },
         body: JSON.stringify({
           model: opts.model,
-          prompt,
+          ...fim,
           max_tokens: opts.maxTokens,
           temperature: 0,
           stop,
@@ -86,11 +96,19 @@ export class OpenAICompletionClient implements ManagedClient {
       });
 
       if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        this.logger?.info(`openai completion failed: HTTP ${res.status} ${body.slice(0, 200)}`);
         return "";
       }
-      const data = (await res.json()) as { choices?: Array<{ text?: string }> };
-      return data.choices?.[0]?.text ?? "";
-    } catch {
+      // Classic completions return choices[].text; Mistral's FIM endpoint
+      // answers in the chat shape, choices[].message.content.
+      const data = (await res.json()) as {
+        choices?: Array<{ text?: string; message?: { content?: string } }>;
+      };
+      const choice = data.choices?.[0];
+      return choice?.text ?? choice?.message?.content ?? "";
+    } catch (error) {
+      this.logger?.info(`openai completion failed: ${error}`);
       return "";
     } finally {
       clearTimeout(timer);

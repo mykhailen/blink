@@ -19,12 +19,25 @@ function fileToggleLink(display: StatusDisplay): string | undefined {
   return `[$(blink-disabled) Disable for ${display.filePattern}](command:blink.disableForFileType?${arg})`;
 }
 
+function whatsNewSection(display: StatusDisplay): string | undefined {
+  const wn = display.whatsNew;
+  if (!wn) { return undefined; }
+  const links = ["[$(book) Full changelog](command:blink.openChangelog)"];
+  if (wn.unseen) { links.push("[$(check) Mark as read](command:blink.markNotesSeen)"); }
+  return [
+    `**What's New in ${wn.version}**`,
+    wn.bullets.map((b) => `- ${b}`).join("\n"),
+    links.join(" &emsp;|&emsp; "),
+  ].join("\n\n");
+}
+
 /**
  * Build the Markdown for the status bar item's hover tooltip, styled after the
  * TypeScript status bar tooltip: header (name + version + config link), the
- * current model with a switch link, and the enable/disable action — each on its
- * own row, separated by horizontal rules, with its action link inline. Pure
- * (returns a string) so it is unit-testable; the caller wraps it in a trusted
+ * current model with a switch link, an optional What's New row (newest
+ * CHANGELOG section), and the enable/disable action — each on its own row,
+ * separated by horizontal rules, with its action link inline. Pure (returns a
+ * string) so it is unit-testable; the caller wraps it in a trusted
  * MarkdownString with theme-icon support.
  */
 export function renderTooltipMarkdown(display: StatusDisplay, version: string): string {
@@ -39,11 +52,13 @@ export function renderTooltipMarkdown(display: StatusDisplay, version: string): 
   ];
   const fileToggle = fileToggleLink(display);
   if (fileToggle) { actions.push(fileToggle); }
-  return [
+  const rows = [
     `**${display.icon} Blink** · v${version}`,
     `---`,
     `[${model} $(chevron-down)](command:blink.switchModel)`,
-    `---`,
-    actions.join(" &emsp;|&emsp; "),
-  ].join("\n\n");
+  ];
+  const whatsNew = whatsNewSection(display);
+  if (whatsNew) { rows.push(`---`, whatsNew); }
+  rows.push(`---`, actions.join(" &emsp;|&emsp; "));
+  return rows.join("\n\n");
 }

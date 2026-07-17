@@ -3,6 +3,7 @@ import {
   resolveActiveModel,
   isModelConfigured,
   modelTarget,
+  requestTimeoutFor,
   type LlamaCppModelConfig,
   type OpenAiModelConfig,
   type OllamaModelConfig,
@@ -39,6 +40,15 @@ suite("config/models", () => {
   test("isModelConfigured: ollama needs a baseUrl", () => {
     assert.strictEqual(isModelConfigured(ollama), true);
     assert.strictEqual(isModelConfigured({ ...ollama, baseUrl: "" }), false);
+  });
+  test("requestTimeoutFor honors an explicit requestTimeoutMs", () => {
+    assert.strictEqual(requestTimeoutFor({ ...openai, requestTimeoutMs: 1234 }), 1234);
+    assert.strictEqual(requestTimeoutFor({ ...llama, requestTimeoutMs: 1234 }), 1234);
+  });
+  test("requestTimeoutFor defaults per backend when the entry omits it (remote gets longer)", () => {
+    assert.strictEqual(requestTimeoutFor({ ...llama, requestTimeoutMs: undefined as unknown as number }), 3000);
+    assert.strictEqual(requestTimeoutFor({ ...openai, requestTimeoutMs: undefined as unknown as number }), 10000);
+    assert.strictEqual(requestTimeoutFor({ ...ollama, requestTimeoutMs: undefined as unknown as number }), 10000);
   });
   test("modelTarget describes the connection", () => {
     assert.strictEqual(modelTarget(llama), "qwen.gguf");

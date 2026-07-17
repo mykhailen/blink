@@ -25,7 +25,7 @@ export class BackendRegistry implements IBackendRegistry {
 
   private readonly backends: Partial<Record<BlinkBackend, () => ManagedClient>> = {
     llamacpp: () => new LocalLlamaCompletionClient(loadRealLlamaEngine, this.logger),
-    openai: () => new OpenAICompletionClient(),
+    openai: () => new OpenAICompletionClient(fetch, this.logger),
   };
 
   create(backend: BlinkBackend): ManagedClient {

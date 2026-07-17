@@ -1,6 +1,6 @@
 import type { ManagedClient } from "../types.js";
 import type { ILogger } from "../../common/logger.js";
-import type { ModelConfig, LlamaCppModelConfig } from "../../config/models.js";
+import { requestTimeoutFor, type ModelConfig, type LlamaCppModelConfig } from "../../config/models.js";
 import { CompletionRequest } from "../../completion/completionEngine.js";
 
 /** Thrown when the configured local model lacks FIM/infill tokens. */
@@ -71,7 +71,7 @@ export class LocalLlamaCompletionClient implements ManagedClient {
       modelPath: m.localModelPath,
       gpu: m.gpu ?? "auto",
       maxTokens: m.maxTokens,
-      timeoutMs: m.requestTimeoutMs,
+      timeoutMs: requestTimeoutFor(m),
     };
     // Only the model path / gpu affect the loaded engine; maxTokens/timeout are
     // per-generation. Reset (reload on next complete) only when those change.

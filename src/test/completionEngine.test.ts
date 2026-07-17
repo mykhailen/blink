@@ -65,6 +65,20 @@ suite("CompletionEngine", () => {
     assert.deepStrictEqual(sink.stop, []);
   });
 
+  test("passes the raw prefix/suffix parts to the client alongside the rendered prompt", async () => {
+    const sink: { parts?: { prefix: string; suffix: string } } = {};
+    const client: CompletionClient = {
+      async complete(_prompt: string, _stop: string[], _signal: AbortSignal, parts?: { prefix: string; suffix: string }) {
+        sink.parts = parts;
+        return "x";
+      },
+      async getFimPrefix() { return null; },
+    };
+    const e = engineWith(client);
+    await e.complete(req({ prefix: "const x = ", suffix: ";" }), sig());
+    assert.deepStrictEqual(sink.parts, { prefix: "const x = ", suffix: ";" });
+  });
+
   test("calls the client once per request and returns its text", async () => {
     const calls = { n: 0 };
     const e = engineWith(fakeClient("42;", { calls }));

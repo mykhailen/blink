@@ -4,6 +4,7 @@ import {
   inferNameFromSource, isUrl, uniqueName,
 } from "../setup/modelPicker.js";
 import { RECOMMENDED_MODELS } from "../setup/recommendedModels.js";
+import { REMOTE_PRESETS } from "../setup/remotePresets.js";
 import { llamaModel } from "./fixtures.js";
 
 suite("modelPicker", () => {
@@ -43,6 +44,16 @@ suite("modelPicker", () => {
       assert.deepStrictEqual(without.map((e) => e.kind), ["custom", "toggle"]);
       const defaulted = buildPickEntries([], [], "", true);
       assert.deepStrictEqual(defaulted.map((e) => e.kind), ["custom", "toggle"]);
+    });
+
+    test("remote presets appear after custom and before cuda/toggle", () => {
+      const entries = buildPickEntries([], [], "", true, true, REMOTE_PRESETS);
+      assert.deepStrictEqual(
+        entries.map((e) => e.kind),
+        ["custom", ...REMOTE_PRESETS.map(() => "remote"), "cuda", "toggle"],
+      );
+      const remote = entries.find((e) => e.kind === "remote");
+      assert.ok(remote?.kind === "remote" && remote.preset === REMOTE_PRESETS[0]);
     });
 
     test("the toggle entry carries the current enabled state", () => {

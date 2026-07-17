@@ -126,7 +126,10 @@ export class CompletionEngine implements ICompletionEngine {
     try {
       const prompt = fimTemplate.render(req);
 
-      raw = await this.client.complete(prompt, fimTemplate.stop, signal);
+      raw = await this.client.complete(prompt, fimTemplate.stop, signal, {
+        prefix: req.prefix,
+        suffix: req.suffix,
+      });
     } catch (err) {
       this.log?.info(`completion request failed: ${String(err)}`);
       return { text: null, cacheHit: false };

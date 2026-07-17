@@ -11,7 +11,10 @@ the active entry. Each model declares a **backend**:
 
 - **`llamacpp`** (default) — an in-process GGUF code model via **node-llama-cpp**,
   using native **FIM** (fill-in-the-middle). Default model: a Qwen2.5-Coder base.
-- **`openai`** — any OpenAI-compatible `/v1/completions` endpoint.
+- **`openai`** — any OpenAI-compatible `/v1/completions` endpoint. Per-model
+  `promptStyle: "prefix-suffix"` supports server-side-templated FIM endpoints
+  (e.g. Mistral codestral `/v1/fim/completions`) by sending `prompt` + `suffix`
+  instead of one locally templated prompt.
 - **`ollama`** — config shape only; the client is not implemented yet.
 
 The completion pipeline: gather context (current file prefix/suffix, recent
@@ -78,8 +81,10 @@ src/
   provider/
     inlineProvider.ts       BlinkInlineProvider: thin InlineCompletionItemProvider adapter
     debounce.ts, trigger.ts triggering / keystroke-burst control (pure)
+    doubleTap.ts            DoubleTapDetector: double-Escape toggle window (pure)
   setup/
     recommendedModels.ts    curated FIM-capable model list (pure data)
+    remotePresets.ts        remote openai-backend presets (generic + Mistral) + remoteModelConfig (pure)
     modelPicker.ts          merge configured+recommended -> pick entries; name/config inference (pure)
     modelDownloader.ts      IModelDownloader: streaming download with progress/abort (node-only)
     setupController.ts      first-run prompt + unified model QuickPick (vscode)
@@ -173,6 +178,16 @@ Completions can be turned off per file type via the `blink.disabledFiles`
 glob blacklist (default markdown); the status bar tooltip offers
 "Disable for *.ts" / "Enable for *.md" for the active file
 (`blink.disableForFileType` / `blink.enableForFileType`, tooltip-only).
+
+**Double-Escape toggles completions**: a plain `escape` keybinding (gated by a
+when-clause so it only matches when Escape would otherwise be a no-op — no
+suggest/find/rename widget, no selection, no snippet, no ghost text) invokes
+the palette-hidden `blink.escapeTap` command; two taps within 400 ms
+(`provider/doubleTap.ts`, pure, reset-on-fire) flip `blink.enabled` via
+`setEnabled`, same as the palette-visible `blink.toggle`. NOT a VS Code chord —
+`"escape escape"` would put VS Code into chord-wait mode and break single
+Escape editor-wide. Extensions that claim Escape (e.g. VSCodeVim) may conflict;
+that's an accepted trade-off.
 
 ## Gotchas
 
