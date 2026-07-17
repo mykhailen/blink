@@ -2,7 +2,7 @@
   "name": "blink-for-vscode",
   "displayName": "Blink - Local AI Code Completions",
   "description": "Lightning-fast inline AI completions (ghost text), local-first and BYOK: GGUF models in-process via llama.cpp, or any OpenAI-compatible endpoint.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "lojell",
   "license": "MIT",
   "icon": "media/icon.png",

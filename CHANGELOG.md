@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.1.4] — 2026-07-17
+## [0.1.5] — 2026-07-17
 
 - **Mistral Codestral support**: the `openai` backend gained
   `promptStyle: "prefix-suffix"` for endpoints that apply the FIM template

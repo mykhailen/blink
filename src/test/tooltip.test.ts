@@ -20,9 +20,9 @@ function display(over: Partial<StatusDisplay> = {}): StatusDisplay {
 }
 
 suite("renderTooltipMarkdown", () => {
-  test("header line shows Blink, the version, and a Settings link scoped to blink", () => {
+  test("header line shows Blink, the version linking to the changelog, and a Settings link scoped to blink", () => {
     const md = renderTooltipMarkdown(display(), "0.1.0");
-    assert.ok(md.includes("**$(sparkle) Blink** · v0.1.0"));
+    assert.ok(md.includes("**$(sparkle) Blink** · [v0.1.0](command:blink.openChangelog)"));
     assert.ok(md.includes("[$(gear) Settings](command:workbench.action.openSettings?%22blink%22)"));
   });
 
@@ -111,16 +111,18 @@ suite("renderTooltipMarkdown what's new", () => {
     assert.ok(rows[3].includes("command:workbench.action.openSettings")); // actions stay last
   });
 
-  test("always links the full changelog", () => {
+  test("links the full changelog and Mark as read while unseen", () => {
     const md = renderTooltipMarkdown(display({ whatsNew: notes }), "0.1.5");
     assert.ok(md.includes("[$(book) Full changelog](command:blink.openChangelog)"));
+    assert.ok(md.includes("[$(check) Mark as read](command:blink.markNotesSeen)"));
   });
 
-  test("offers Mark as read only while unseen", () => {
-    const unseen = renderTooltipMarkdown(display({ whatsNew: notes }), "0.1.5");
-    assert.ok(unseen.includes("[$(check) Mark as read](command:blink.markNotesSeen)"));
-    const seen = renderTooltipMarkdown(display({ whatsNew: { ...notes, unseen: false } }), "0.1.5");
-    assert.ok(!seen.includes("command:blink.markNotesSeen"));
+  test("hides the whole section once the notes are seen (three rows)", () => {
+    const md = renderTooltipMarkdown(display({ whatsNew: { ...notes, unseen: false } }), "0.1.5");
+    assert.strictEqual(md.split("\n\n---\n\n").length, 3);
+    assert.ok(!md.includes("What's New"));
+    assert.ok(!md.includes("command:blink.markNotesSeen"));
+    assert.ok(!md.includes("[$(book) Full changelog]")); // header's version link may still open the changelog
   });
 
   test("omits the section entirely when whatsNew is null (three rows)", () => {

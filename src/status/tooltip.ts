@@ -21,9 +21,12 @@ function fileToggleLink(display: StatusDisplay): string | undefined {
 
 function whatsNewSection(display: StatusDisplay): string | undefined {
   const wn = display.whatsNew;
-  if (!wn) { return undefined; }
-  const links = ["[$(book) Full changelog](command:blink.openChangelog)"];
-  if (wn.unseen) { links.push("[$(check) Mark as read](command:blink.markNotesSeen)"); }
+  // Unread-only: marking as read (or the 24 h expiry) drops the whole section.
+  if (!wn?.unseen) { return undefined; }
+  const links = [
+    "[$(book) Full changelog](command:blink.openChangelog)",
+    "[$(check) Mark as read](command:blink.markNotesSeen)",
+  ];
   return [
     `**What's New in ${wn.version}**`,
     wn.bullets.map((b) => `- ${b}`).join("\n"),
@@ -53,7 +56,7 @@ export function renderTooltipMarkdown(display: StatusDisplay, version: string): 
   const fileToggle = fileToggleLink(display);
   if (fileToggle) { actions.push(fileToggle); }
   const rows = [
-    `**${display.icon} Blink** · v${version}`,
+    `**${display.icon} Blink** · [v${version}](command:blink.openChangelog)`,
     `---`,
     `[${model} $(chevron-down)](command:blink.switchModel)`,
   ];
