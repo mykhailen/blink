@@ -40,3 +40,37 @@ export function patternForFile(basename: string): string {
   if (dot <= 0 || dot === basename.length - 1) { return basename; }
   return `*${basename.slice(dot)}`;
 }
+
+/**
+ * URI schemes of chat prompt inputs (Copilot Chat view, quick chat, editor and
+ * terminal inline chat, the sessions view). Real text documents, so the
+ * catch-all provider selector would otherwise fire FIM requests for every
+ * keystroke of a prompt. Re-enabled by blink.enableInChat.
+ */
+const CHAT_INPUT_SCHEMES: readonly string[] = ["chatSessionInput", "sessions-chat"];
+
+/** URI scheme of the source control commit message box. Re-enabled by blink.enableInCommitMessage. */
+const COMMIT_INPUT_SCHEME = "vscode-scm";
+
+export interface SchemeGateConfig {
+  enableInChat: boolean;
+  enableInCommitMessage: boolean;
+  /** User-supplied extra schemes; always disabled, even when a checkbox re-enables a built-in. */
+  disabledSchemes: readonly string[];
+}
+
+/**
+ * Whether blink should stay quiet in a document with this URI scheme. The two
+ * checkboxes only remove their built-in defaults; blink.disabledSchemes is a
+ * plain blacklist and wins. Entries are trimmed and matched case-insensitively.
+ */
+export function isDisabledScheme(scheme: string, config: SchemeGateConfig): boolean {
+  const s = scheme.toLowerCase();
+  if (s && config.disabledSchemes.some((entry) => entry.trim().toLowerCase() === s)) {
+    return true;
+  }
+  if (!config.enableInChat && CHAT_INPUT_SCHEMES.some((c) => c.toLowerCase() === s)) {
+    return true;
+  }
+  return !config.enableInCommitMessage && s === COMMIT_INPUT_SCHEME;
+}

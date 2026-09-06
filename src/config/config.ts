@@ -12,6 +12,9 @@ export interface BlinkConfig {
   model: string;            // selector: the active model's `name`
   models: ModelConfig[];
   disabledFiles: string[];  // filename globs (basename match) where blink is off
+  enableInChat: boolean;    // complete inside chat prompt inputs (chatSessionInput etc.)
+  enableInCommitMessage: boolean; // complete inside the SCM commit message box (vscode-scm)
+  disabledSchemes: string[]; // extra URI schemes where blink is off (always wins)
   debounceMs: number;
   maxPrefixChars: number;
   maxSuffixChars: number;
@@ -29,6 +32,9 @@ const DEFAULTS: BlinkConfig = {
   model: "",
   models: [],
   disabledFiles: ["*.md", "*.markdown"],
+  enableInChat: false,
+  enableInCommitMessage: false,
+  disabledSchemes: [],
   debounceMs: 200,
   maxPrefixChars: 2000,
   maxSuffixChars: 1000,
@@ -69,11 +75,15 @@ export class BlinkConfigProvider implements IConfigProvider {
     const c = vscode.workspace.getConfiguration("blink");
     const models = c.get<ModelConfig[]>("models", []);
     const disabledFiles = c.get<string[]>("disabledFiles", DEFAULTS.disabledFiles);
+    const disabledSchemes = c.get<string[]>("disabledSchemes", DEFAULTS.disabledSchemes);
     return {
       enabled: c.get("enabled", DEFAULTS.enabled),
       model: c.get("model", DEFAULTS.model),
       models: Array.isArray(models) ? models : [],
       disabledFiles: Array.isArray(disabledFiles) ? disabledFiles : [],
+      enableInChat: c.get("enableInChat", DEFAULTS.enableInChat),
+      enableInCommitMessage: c.get("enableInCommitMessage", DEFAULTS.enableInCommitMessage),
+      disabledSchemes: Array.isArray(disabledSchemes) ? disabledSchemes.filter((x) => typeof x === "string") : [],
       debounceMs: c.get("debounceMs", DEFAULTS.debounceMs),
       maxPrefixChars: c.get("maxPrefixChars", DEFAULTS.maxPrefixChars),
       maxSuffixChars: c.get("maxSuffixChars", DEFAULTS.maxSuffixChars),

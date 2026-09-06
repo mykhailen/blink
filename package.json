@@ -29,12 +29,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/LoJell/blink.git"
+    "url": "https://github.com/mykhailen/blink.git"
   },
   "bugs": {
-    "url": "https://github.com/LoJell/blink/issues"
+    "url": "https://github.com/mykhailen/blink/issues"
   },
-  "homepage": "https://github.com/LoJell/blink#readme",
+  "homepage": "https://github.com/mykhailen/blink#readme",
   "galleryBanner": {
     "color": "#1e1e2e",
     "theme": "dark"
@@ -105,6 +105,25 @@
             "*.markdown"
           ],
           "description": "File name glob patterns where blink completions are disabled (matched against the file name, e.g. \"*.md\" or \"Makefile\"). `*` and `?` are supported."
+        },
+        "blink.enableInChat": {
+          "type": "boolean",
+          "default": false,
+          "description": "Offer completions while typing in chat prompt inputs (Copilot Chat, quick chat, editor and terminal inline chat). Off by default: a code model's fill-in-the-middle suggestions are rarely useful in a prose prompt."
+        },
+        "blink.enableInCommitMessage": {
+          "type": "boolean",
+          "default": false,
+          "description": "Offer completions while typing in the Source Control commit message box. Off by default."
+        },
+        "blink.disabledSchemes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "uniqueItems": true,
+          "markdownDescription": "Extra document URI schemes where blink completions are disabled, e.g. `vscode-interactive-input` (Interactive Window input) or `vscode-notebook-cell` (notebook cells). Chat inputs (`chatSessionInput`, `sessions-chat`) and the commit box (`vscode-scm`) are already covered by `#blink.enableInChat#` and `#blink.enableInCommitMessage#`; an entry here always wins over those checkboxes. See VS Code's [list of built-in schemes](https://github.com/microsoft/vscode/blob/main/src/vs/base/common/network.ts)."
         },
         "blink.model": {
           "type": "string",

@@ -8,7 +8,8 @@ import type { ILogger } from './logging.js';
 export { ILogger } from './logging.js';
 
 export class Logger implements ILogger {
-  private _outputChannel = vscode.window.createOutputChannel(BLINK_NAME, { log: true });
+  private _outputChannel = vscode.window.createOutputChannel(
+    BLINK_NAME[0].toUpperCase() + BLINK_NAME.slice(1), { log: true });
 
   constructor(private readonly context: vscode.ExtensionContext) {
     context.subscriptions.push(this._outputChannel);

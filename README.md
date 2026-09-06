@@ -69,6 +69,9 @@ endpoint** — or add an entry to `blink.models` by hand (below).
 | Setting | Default | What it does |
 | --- | --- | --- |
 | `blink.enabled` | `true` | Master switch for inline completions. |
+| `blink.enableInChat` | `false` | Also complete inside chat prompt inputs (Copilot Chat, inline/terminal chat). The terminal itself is never completed by blink; ghost text there comes from your shell or Copilot. |
+| `blink.enableInCommitMessage` | `false` | Also complete inside the Source Control commit message box. |
+| `blink.disabledSchemes` | `[]` | Extra document URI schemes to stay quiet in (e.g. `vscode-interactive-input`). Always wins over the two checkboxes above. [Built-in schemes](https://github.com/microsoft/vscode/blob/main/src/vs/base/common/network.ts). |
 | `blink.model` | `""` | Name of the active entry in `blink.models`. |
 | `blink.models` | `[]` | The model registry (examples below). |
 

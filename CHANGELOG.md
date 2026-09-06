@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.1.6]
+
+- Completions no longer appear while typing prompts in **Copilot Chat** (or
+  quick chat, editor/terminal inline chat). Opt back in with
+  `blink.enableInChat`. Note: blink never completes inside the integrated
+  terminal itself; suggestions there come from your shell (e.g. PSReadLine
+  predictions) or Copilot.
+- Likewise, no completions in the **Source Control commit message** box unless
+  `blink.enableInCommitMessage` is on.
+- New `blink.disabledSchemes` list to silence any other document URI scheme
+  (e.g. `vscode-interactive-input`); an entry there always wins over the two
+  checkboxes above.
+
 ## [0.1.5] — 2026-07-17
 
 - **Mistral Codestral support**: the `openai` backend gained

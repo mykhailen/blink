@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "node:path";
 import { IConfigProvider } from "../config/config.js";
-import { matchDisabledFile } from "../config/fileBlacklist.js";
+import { isDisabledScheme, matchDisabledFile } from "../config/fileBlacklist.js";
 import type { ModelConfig } from "../config/models.js";
 import { shouldRequest } from "./trigger.js";
 import { delay } from "./debounce.js";
@@ -97,6 +97,11 @@ export class BlinkInlineProvider implements IInlineCompletionItemProvider {
     const model = this._model;
     const config = this.config.readConfig();
 
+    // Chat prompt boxes, the SCM commit box, etc. are text documents too; the
+    // "**" selector reaches them, so gate on the URI scheme.
+    if (isDisabledScheme(document.uri.scheme, config)) {
+      return null;
+    }
     if (matchDisabledFile(path.basename(document.fileName), config.disabledFiles)) {
       return null;
     }

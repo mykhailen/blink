@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { matchDisabledFile, patternForFile } from "../config/fileBlacklist.js";
+import { isDisabledScheme, matchDisabledFile, patternForFile } from "../config/fileBlacklist.js";
 
 suite("matchDisabledFile", () => {
   test("matches a basename against a *.ext glob", () => {
@@ -63,5 +63,45 @@ suite("patternForFile", () => {
 
   test("trailing dot -> exact basename", () => {
     assert.strictEqual(patternForFile("weird."), "weird.");
+  });
+});
+
+suite("isDisabledScheme", () => {
+  const defaults = { enableInChat: false, enableInCommitMessage: false, disabledSchemes: [] as string[] };
+
+  test("chat prompt inputs are disabled by default", () => {
+    assert.strictEqual(isDisabledScheme("chatSessionInput", defaults), true);
+    assert.strictEqual(isDisabledScheme("sessions-chat", defaults), true);
+  });
+
+  test("enableInChat re-enables the chat prompt inputs", () => {
+    assert.strictEqual(isDisabledScheme("chatSessionInput", { ...defaults, enableInChat: true }), false);
+  });
+
+  test("the commit message box is disabled by default", () => {
+    assert.strictEqual(isDisabledScheme("vscode-scm", defaults), true);
+  });
+
+  test("enableInCommitMessage re-enables the commit message box", () => {
+    assert.strictEqual(isDisabledScheme("vscode-scm", { ...defaults, enableInCommitMessage: true }), false);
+  });
+
+  test("ordinary editor schemes are never disabled by the defaults", () => {
+    assert.strictEqual(isDisabledScheme("file", defaults), false);
+    assert.strictEqual(isDisabledScheme("untitled", defaults), false);
+    assert.strictEqual(isDisabledScheme("vscode-notebook-cell", defaults), false);
+  });
+
+  test("a custom entry in disabledSchemes disables that scheme", () => {
+    assert.strictEqual(isDisabledScheme("vscode-interactive-input", { ...defaults, disabledSchemes: ["vscode-interactive-input"] }), true);
+  });
+
+  test("a custom entry wins over the checkbox for a built-in scheme", () => {
+    assert.strictEqual(isDisabledScheme("chatSessionInput", { enableInChat: true, enableInCommitMessage: false, disabledSchemes: ["chatSessionInput"] }), true);
+  });
+
+  test("custom entries are trimmed and compared case-insensitively", () => {
+    assert.strictEqual(isDisabledScheme("vscode-scm", { ...defaults, enableInCommitMessage: true, disabledSchemes: [" VSCODE-SCM "] }), true);
+    assert.strictEqual(isDisabledScheme("file", { ...defaults, disabledSchemes: ["", "  "] }), false);
   });
 });
