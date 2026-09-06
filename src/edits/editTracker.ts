@@ -97,7 +97,7 @@ export class EditTracker implements IEditTracker {
           this.log.info(`edit tracker error: ${String(err)}`);
         }
       })
-    )
+    );
   }
 
   record(region: EditRegion): void {

@@ -127,26 +127,26 @@ context: {\n${completionItems.map(x => `${x.label}: ${x.insertText},`).join('\n'
         ? item.label
         : item.label.label;
 
-    if (!label) return false;
+    if (!label) { return false; }
 
     // Too noisy / useless for LLM context
-    if (label.trim().length === 0) return false;
-    if (label.length > 120) return false;
+    if (label.trim().length === 0) { return false; }
+    if (label.length > 120) { return false; }
 
     // Usually huge and low value
-    if (item.documentation) return false;
+    if (item.documentation) { return false; }
 
     // Optional: remove snippets if you only want semantic symbols
-    if (item.kind === vscode.CompletionItemKind.Snippet) return false;
+    if (item.kind === vscode.CompletionItemKind.Snippet) { return false; }
 
     // Optional: remove plain text suggestions
-    if (item.kind === vscode.CompletionItemKind.Text) return false;
+    if (item.kind === vscode.CompletionItemKind.Text) { return false; }
 
     return true;
   }
 
   truncate(value: unknown, max: number) {
-    if (typeof value !== "string") return undefined;
+    if (typeof value !== "string") { return undefined; }
     return value.length > max ? value.slice(0, max) + "…" : value;
   }
 }
